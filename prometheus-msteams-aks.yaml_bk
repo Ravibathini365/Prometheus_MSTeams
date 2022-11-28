@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-msteams
+  namespace: monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: prometheus-msteams
+  template:
+    metadata:
+      labels:
+        app: prometheus-msteams
+    spec:
+      containers:
+      - name: prometheus-msteams
+        image: etocoreinfraregistry.azurecr.io/prometheus-msteams:latest
+        env:
+        - name: TEAMS_INCOMING_WEBHOOK_URL
+          value: "https://lbrands.webhook.office.com/webhookb2/ea03a849-6aa9-41b7-8489-11920a693d3f@865f3fef-b96b-4b1d-a7b6-0b4b3fcfc87e/IncomingWebhook/6c932733300e46fe9dd3824f6747a526/7433bfe8-a996-4097-b0a6-b766782899d1"
+        - name: TEAMS_REQUEST_URI
+          value: "alertmanager"
+        ports:
+        - containerPort: 2000
+      imagePullSecrets:
+      - name: etocoreinfra-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-msteams
+  namespace: monitoring
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  clusterIP: None
+  ports:
+  - port: 2000
+    targetPort: 2000
+  selector:
+    app: prometheus-msteams
